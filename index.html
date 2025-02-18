@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hit Doge</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+        
+        const supabaseUrl = 'https://wyelzkbxsnwpjtomqxfn.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5ZWx6a2J4c253cGp0b21xeGZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk4MjMzMjEsImV4cCI6MjA1NTM5OTMyMX0.2NzGA2wqfAAnIVeXHTVSbILQ6vWUsua6dVI0rIZYNuY'
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
+        const dogeContainer = document.getElementById('dogeContainer');
+        const dogeImage = document.getElementById('dogeImage');
+        const clickCounter = document.getElementById('clickCount');
+        const leaderboardButton = document.getElementById('leaderboardButton');
+        const leaderboardPanel = document.getElementById('leaderboardPanel');
+        const leaderboardList = document.getElementById('leaderboardList');
+        const totalHitsElement = document.getElementById('totalHits');
+        const totalHitsButton = document.getElementById('totalHitsButton');
+        const leaderboardTotalHits = document.getElementById('leaderboardTotalHits');
+        const userFlagElement = document.getElementById('userFlag');
+        const soundButton = document.getElementById('soundButton');
+        const mobileButtons = document.getElementById('mobileButtons');
+        const counter = document.getElementById('counter');
+        let clicks = 0;
+        let userCountry = 'Unknown';
+        let userCountryCode = '';
+        let isSoundMuted = false;
+        
+        const normalDoge = '1.jpg';
+        const angryDoge = '2.jpg';
+
+        // Create audio element
+        const hitSound = new Audio('hit.mp3');
+        hitSound.volume = 0.5;
+
+        // Function to get country code
+        function getCountryCode(countryName) {
+            // Special cases mapping
+            const countryMap = {
+                'United States': 'us',
+                'United Kingdom': 'gb',
+                'South Korea': 'kr',
+                'North Korea': 'kp',
+                'United Arab Emirates': 'ae',
+                'Saudi Arabia': 'sa',
+                'New Zealand': 'nz',
+                'South Africa': 'za',
+                'Indonesia': 'id',
+                'India': 'in',
+                'China': 'cn',
+                'Japan': 'jp',
+                'Vietnam': 'vn',
+                'Thailand': 'th',
+                'Malaysia': 'my',
+                'Singapore': 'sg',
+                'Philippines': 'ph',
+                'Australia': 'au',
+                'Russia': 'ru',
+                'Brazil': 'br',
+                'Canada': 'ca',
+                'Mexico': 'mx',
+                'France': 'fr',
+                'Germany': 'de',
+                'Italy': 'it',
+                'Spain': 'es',
+                'Netherlands': 'nl',
+                'Sweden': 'se',
+                'Norway': 'no',
+                'Denmark': 'dk',
+                'Finland': 'fi'
+            };
+            
+            // Try to get from map first
+            if (countryMap[countryName]) {
+                return countryMap[countryName];
+            }
+            
+            // If not in map, convert to lowercase and take first two letters
+            return countryName.toLowerCase().replace(/\s+/g, '').substring(0, 2);
+        }
+
+        // Sound button click handler
+        soundButton.addEventListener('click', () => {
+            isSoundMuted = !isSoundMuted;
+            soundButton.innerHTML = isSoundMuted ? 
+                '<img src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6\'/%3E%3C/svg%3E" alt="Muted" class="sound-icon">' :
+                '<img src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M11 5 6 9H2v6h4l5 4zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07\'/%3E%3C/svg%3E" alt="Unmuted" class="sound-icon">';
+        });
+
+        // Set initial doge image
+        dogeImage.src = normalDoge;
+
+        // Test Supabase connection
+        async function testConnection() {
+            try {
+                const { data, error } = await supabase
+                    .from('clicks')
+                    .select('count(*)')
+                console.log('Connection test:', { data, error });
+            } catch (error) {
+                console.error('Connection test failed:', error);
+            }
+        }
+
+        // Update total hits
+        async function updateTotalHits() {
+            try {
+                const { data, error } = await supabase
+                    .from('clicks')
+                    .select('click_count')
+                
+                if (data) {
+                    const total = data.reduce((sum, record) => sum + record.click_count, 0);
+                    totalHitsElement.textContent = total.toLocaleString();
+                    leaderboardTotalHits.textContent = total.toLocaleString();
+                }
+            } catch (error) {
+                console.error('Error updating total hits:', error);
+            }
+        }
+
+        // Leaderboard toggle
+        leaderboardButton.addEventListener('click', () => {
+            leaderboardPanel.classList.toggle('open');
+            leaderboardButton.classList.toggle('open');
+            totalHitsButton.classList.toggle('hidden');
+            mobileButtons.classList.toggle('up');
+            counter.classList.toggle('up');
+            updateLeaderboard();
+        });
+
+        // Close leaderboard when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!leaderboardPanel.contains(e.target) && 
+                !leaderboardButton.contains(e.target) && 
+                !dogeContainer.contains(e.target) &&
+                leaderboardPanel.classList.contains('open')) {
+                leaderboardPanel.classList.remove('open');
+                leaderboardButton.classList.remove('open');
+                totalHitsButton.classList.remove('hidden');
+                mobileButtons.classList.remove('up');
+                counter.classList.remove('up');
+            }
+        });
+
+        function createFloatingNumber(x, y) {
+            const floatingNum = document.createElement('div');
+            floatingNum.className = 'floating-number';
+            floatingNum.textContent = '+1';
+            floatingNum.style.left = `${x}px`;
+            floatingNum.style.top = `${y}px`;
+            document.body.appendChild(floatingNum);
+            
+            floatingNum.addEventListener('animationend', () => {
+                floatingNum.remove();
+            });
+        }
+
+        // Get user's country
+        async function getUserCountry() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+                userCountry = data.country_name;
+                userCountryCode = getCountryCode(userCountry);
+                console.log('Got country:', userCountry, 'code:', userCountryCode);
+                userFlagElement.src = `https://flagcdn.com/w160/${userCountryCode}.png`;
+                userFlagElement.alt = `${userCountry} flag`;
+                await updateOrCreateCountryRecord();
+            } catch (error) {
+                console.error('Error getting country:', error);
+            }
+        }
+
+        // Update or create country record
+        async function updateOrCreateCountryRecord() {
+            try {
+                console.log('Updating record for country:', userCountry);
+                let { data: existingCountry, error: selectError } = await supabase
+                    .from('clicks')
+                    .select('*')
+                    .eq('country', userCountry)
+                    .single();
+
+                console.log('Existing country data:', existingCountry);
+                console.log('Select error:', selectError);
+
+                if (existingCountry) {
+                    const { data, error } = await supabase
+                        .from('clicks')
+                        .update({ click_count: existingCountry.click_count + 1 })
+                        .eq('country', userCountry);
+                    
+                    console.log('Update result:', { data, error });
+                } else {
+                    const { data, error } = await supabase
+                        .from('clicks')
+                        .insert([{ country: userCountry, click_count: 1 }]);
+                    
+                    console.log('Insert result:', { data, error });
+                }
+
+                await updateLeaderboard();
+                await updateTotalHits();
+            } catch (error) {
+                console.error('Error updating clicks:', error);
+            }
+        }
+
+        // Update leaderboard
+        async function updateLeaderboard() {
+            try {
+                console.log('Updating leaderboard...');
+                const { data: leaderboardData, error } = await supabase
+                    .from('clicks')
+                    .select('*')
+                    .order('click_count', { ascending: false });
+
+                console.log('Leaderboard data:', leaderboardData);
+                console.log('Leaderboard error:', error);
+
+                if (leaderboardData) {
+                    leaderboardList.innerHTML = leaderboardData
+                        .map((item, index) => {
+                            const countryCode = getCountryCode(item.country);
+                            return `
+                                <li class="leaderboard-item">
+                                    <span class="rank">${index + 1}</span>
+                                    <div class="country">
+                                        <img class="flag" 
+                                             src="https://flagcdn.com/w40/${countryCode}.png" 
+                                             alt="${item.country} flag">
+                                        <span>${item.country}</span>
+                                    </div>
+                                    <span class="score">${item.click_count}</span>
+                                </li>
+                            `;
+                        })
+                        .join('');
+                }
+            } catch (error) {
+                console.error('Error updating leaderboard:', error);
+            }
+        }
+
+        function updateCounter(e) {
+            clicks++;
+            clickCounter.textContent = clicks;
+            clickCounter.classList.add('pulse');
+            
+            const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            createFloatingNumber(x, y);
+            
+            // Play sound if not muted
+            if (!isSoundMuted) {
+                hitSound.currentTime = 0;
+                hitSound.play().catch(e => console.log('Error playing sound:', e));
+            }
+            
+            setTimeout(() => {
+                clickCounter.classList.remove('pulse');
+            }, 300);
+
+            updateOrCreateCountryRecord();
+        }
+
+        dogeContainer.addEventListener('mousedown', (e) => {
+            dogeImage.src = angryDoge;
+            updateCounter(e);
+        });
+
+        dogeContainer.addEventListener('mouseup', () => {
+            dogeImage.src = normalDoge;
+        });
+
+        dogeContainer.addEventListener('mouseleave', () => {
+            dogeImage.src = normalDoge;
+        });
+
+        dogeContainer.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            dogeImage.src = angryDoge;
+            updateCounter(e);
+        });
+
+        dogeContainer.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            dogeImage.src = normalDoge;
+        });
+
+        // Initialize
+        testConnection();
+        getUserCountry();
+        updateLeaderboard();
+        updateTotalHits();
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
+
+        .counter {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .user-flag {
+            width: 160px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .title {
+            font-size: 64px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 
+                -2px -2px 0 #000,  
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000;
+        }
+
+        .click-count {
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-shadow: 
+                -2px -2px 0 #000,  
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000;
+            position: relative;
+        }
+
+        .click-count.pulse {
+            transform: scale(1.5) rotate(5deg);
+            color: #FFD700;
+            text-shadow: 
+                0 0 10px rgba(255, 215, 0, 0.5),
+                -2px -2px 0 #000,  
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000;
+        }
+
+        @keyframes floatingNumber {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-50px) scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        .floating-number {
+            position: absolute;
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 24px;
+            pointer-events: none;
+            animation: floatingNumber 0.8s ease-out forwards;
+            text-shadow: 
+                -1px -1px 0 #000,  
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000;
+        }
+
+        .doge-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .doge-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -o-user-select: none;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .button {
+            background: rgba(255, 255, 255, 0.8);
+            color: black;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+            border: 2px solid white;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            justify-content: center;
+            text-decoration: none;
+            height: 44px;
+            box-sizing: border-box;
+        }
+
+        .button:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .ca-button {
+            position: fixed;
+            left: 20px;
+            top: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 200px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-decoration: none;
+            color: black;
+        }
+
+        .ca-button:hover {
+            width: 600px;
+        }
+
+        .ca-button:hover ~ .hid-button {
+            left: 640px;
+        }
+
+        .ca-button:hover ~ .twitter-button {
+            left: 780px;
+        }
+
+        .ca-button:hover ~ .sound-button {
+            left: 840px;
+        }
+
+        .ca-button .ca-text {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .ca-button .ca-address {
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+        }
+
+        .ca-button:hover .ca-address {
+            max-width: none;
+        }
+
+        .hid-button {
+            position: fixed;
+            left: 240px;
+            top: 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .twitter-button {
+            position: fixed;
+            left: 380px;
+            top: 20px;
+            font-weight: bold;
+            width: 44px;
+            padding: 0;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .sound-button {
+            position: fixed;
+            left: 440px;
+            top: 20px;
+            font-weight: bold;
+            width: 44px;
+            padding: 0;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .ca-button .ca-text {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ca-button .ca-address {
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .raydium-logo {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+
+        .twitter-icon,
+        .sound-icon {
+            width: 24px;
+            height: 24px;
+            stroke: #000;
+        }
+
+        .total-hits {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 160px;
+        }
+
+        .total-hits.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .leaderboard-total-hits {
+            text-align: center;
+            font-size: 18px;
+            color: #666;
+            margin: -20px 0 20px;
+        }
+
+        .leaderboard-panel {
+            position: fixed;
+            right: -500px;
+            top: 0;
+            width: 500px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.6);
+            color: black;
+            padding: 30px;
+            transition: right 0.3s ease;
+            z-index: 999;
+            overflow-y: auto;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-left: 2px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .leaderboard-panel.open {
+            right: 0;
+        }
+
+        .leaderboard-panel h2 {
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+            color: black;
+        }
+
+        .leaderboard-list {
+            list-style: none;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            font-size: 18px;
+            background: rgba(255, 255, 255, 0.4);
+            margin-bottom: 10px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .leaderboard-item:hover {
+            background: rgba(255, 255, 255, 0.6);
+            transform: translateX(5px);
+        }
+
+        .rank {
+            font-weight: bold;
+            color: #000;
+            margin-right: 20px;
+            font-size: 24px;
+        }
+
+        .country {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .flag {
+            width: 40px;
+            height: 25px;
+            object-fit: cover;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .score {
+            font-weight: bold;
+            color: #000;
+            font-size: 24px;
+        }
+
+        .leaderboard-button {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            flex-direction: column;
+            transition: all 0.3s ease;
+            padding: 20px 10px;
+            height: auto;
+            min-width: auto;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid white;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .leaderboard-button:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .leaderboard-button.open {
+            right: 520px;
+        }
+
+        .leaderboard-button span {
+            writing-mode: vertical-lr;
+            text-orientation: upright;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .counter {
+                top: 150px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+                z-index: 1000;
+                transition: all 0.3s ease;
+            }
+
+            .counter.up {
+                top: 20px;
+            }
+
+            .total-hits {
+                position: fixed;
+                left: 50%;
+                transform: translateX(-50%);
+                top: 10px;
+                width: auto;
+                font-size: 14px;
+                height: 44px;
+                display: flex;
+                align-items: center;
+                padding: 0 15px;
+                border-radius: 22px;
+                margin: 0;
+                z-index: 1000;
+                background: rgba(255, 255, 255, 0.9);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+
+            .mobile-buttons {
+                position: fixed;
+                top: 64px;
+                left: 0;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                padding: 10px;
+                z-index: 1000;
+                transition: all 0.3s ease;
+            }
+
+            .mobile-buttons.up {
+                top: -100px;
+            }
+
+            .user-flag {
+                width: 80px;
+                height: 50px;
+                margin-bottom: 15px;
+                border-radius: 5px;
+                order: -1;
+            }
+
+            .title {
+                font-size: 36px;
+                margin-top: 0;
+                order: 0;
+            }
+
+            .click-count {
+                font-size: 32px;
+                order: 1;
+            }
+
+            .ca-button {
+                position: static;
+                width: 44px;
+                overflow: hidden;
+                padding: 10px;
+                border-radius: 50%;
+                height: 44px;
+                margin: 0;
+            }
+
+            .ca-button .ca-text {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                width: 100%;
+            }
+
+            .ca-button:hover {
+                width: 200px;
+                border-radius: 22px;
+                height: 44px;
+            }
+
+            .ca-button .raydium-logo {
+                width: 24px;
+                height: 24px;
+                min-width: 24px;
+            }
+
+            .ca-button .ca-address {
+                display: none;
+            }
+
+            .ca-button:hover .ca-address {
+                display: block;
+                max-width: none;
+            }
+
+            .hid-button {
+                position: static;
+                width: auto;
+                height: 44px;
+                padding: 10px 20px;
+                border-radius: 22px;
+                white-space: nowrap;
+                min-width: 120px;
+            }
+
+            .twitter-button {
+                position: static;
+                width: 44px;
+                height: 44px;
+                padding: 10px;
+                border-radius: 50%;
+            }
+
+            .sound-button {
+                position: static;
+                width: 44px;
+                height: 44px;
+                padding: 10px;
+                border-radius: 50%;
+            }
+
+            .leaderboard-button {
+                right: 50%;
+                top: auto;
+                bottom: 20px;
+                transform: translateX(50%);
+                flex-direction: row;
+                padding: 10px 20px;
+                border-radius: 25px;
+                z-index: 1000;
+                opacity: 1;
+                visibility: visible;
+                background: rgba(255, 255, 255, 0.9);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+
+            .leaderboard-button span {
+                writing-mode: horizontal-tb;
+                text-orientation: mixed;
+                letter-spacing: 1px;
+            }
+
+            .leaderboard-button.open {
+                right: 50%;
+                bottom: 0;
+            }
+
+            .leaderboard-panel {
+                width: 100%;
+                height: 60vh;
+                right: 0;
+                top: auto;
+                bottom: -60vh;
+                transition: bottom 0.3s ease;
+            }
+
+            .leaderboard-panel.open {
+                right: 0;
+                bottom: 0;
+            }
+
+            .leaderboard-item {
+                padding: 15px 10px;
+                font-size: 16px;
+            }
+
+            .rank {
+                font-size: 20px;
+            }
+
+            .score {
+                font-size: 20px;
+            }
+
+            .flag {
+                width: 30px;
+                height: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="button total-hits" id="totalHitsButton">Total Hits: <span id="totalHits">0</span></div>
+
+    <div class="mobile-buttons" id="mobileButtons">
+        <a href="https://pump.fun" target="_blank" class="button ca-button">
+            <div class="ca-text">
+                <img src="raydium.png" 
+                     alt="Raydium" 
+                     class="raydium-logo">
+                CA: <span class="ca-address" onclick="window.open('https://pump.fun', '_blank')">CxdSKVjLXZHB7Nne5GTLbLPZzJXRsgevfk9C6Qd9pump</span>
+            </div>
+        </a>
+
+        <a href="page2.html" class="button hid-button">About $HID</a>
+
+        <a href="https://x.com" target="_blank" class="button twitter-button">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4l11.733 16h4.267l-11.733 -16zM4 20l6.768 -6.768M20 4l-2.768 2.768'/%3E%3C/svg%3E" 
+                 alt="X" 
+                 class="twitter-icon">
+        </a>
+
+        <div class="button sound-button" id="soundButton">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 5 6 9H2v6h4l5 4zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07'/%3E%3C/svg%3E" 
+                 alt="Sound"  class="sound-icon">
+        </div>
+    </div>
+
+    <div class="counter" id="counter">
+        <img id="userFlag" class="user-flag" alt="User's country flag">
+        <div class="title">HIT DOGE</div>
+        <div class="click-count" id="clickCount">0</div>
+    </div>
+
+    <div class="button leaderboard-button" id="leaderboardButton">
+        <span>LEADERBOARD</span>
+    </div>
+
+    <div class="leaderboard-panel" id="leaderboardPanel">
+        <h2>LEADERBOARD</h2>
+        <div class="leaderboard-total-hits">Total Hits: <span id="leaderboardTotalHits">0</span></div>
+        <ul class="leaderboard-list" id="leaderboardList">
+            <li class="leaderboard-item">
+                <span class="rank">1</span>
+                <div class="country">
+                    <img class="flag" src="https://flagcdn.com/w40/us.png" alt="Country flag">
+                    <span>Loading...</span>
+                </div>
+                <span class="score">0</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="doge-container" id="dogeContainer">
+        <img alt="Doge" class="doge-image" id="dogeImage">
+    </div>
+</body>
+</html>
