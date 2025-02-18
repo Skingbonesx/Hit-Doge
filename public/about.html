@@ -90,26 +90,39 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary-color: #FFD700;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --bg-primary: #f0f0f0;
+            --bg-secondary: #e0e0e0;
+            --white: #fff;
+            --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             min-height: 100vh;
-            color: #333;
+            color: var(--text-primary);
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.8);
-            padding: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            padding: min(5vw, 2rem);
             text-align: center;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             position: relative;
             overflow: hidden;
+            margin-bottom: 2rem;
         }
 
         .header::before {
@@ -124,46 +137,63 @@
         }
 
         .header h1 {
-            font-size: 3rem;
-            color: #333;
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: var(--text-primary);
             margin-bottom: 1rem;
             position: relative;
             z-index: 1;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .header p {
-            font-size: 1.2rem;
-            color: #666;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            color: var(--text-secondary);
             max-width: 800px;
             margin: 0 auto;
             position: relative;
             z-index: 1;
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 1200px;
+            width: min(95%, 1200px);
             margin: 0 auto;
-            padding: 2rem;
+            padding: min(5vw, 2rem);
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+            gap: min(5vw, 2rem);
             flex: 1;
         }
 
         .card {
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            padding: min(5vw, 2rem);
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            height: fit-content;
         }
 
         .featured-card {
             grid-column: 1 / -1;
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 255, 255, 0.95) 100%);
             border: 2px solid rgba(255, 215, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .featured-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at top right, rgba(255,215,0,0.2), transparent);
+            z-index: 0;
+            pointer-events: none;
         }
 
         .card:hover {
@@ -172,78 +202,138 @@
         }
 
         .card h2 {
-            font-size: 1.5rem;
-            color: #333;
+            font-size: clamp(1.25rem, 4vw, 1.5rem);
+            color: var(--text-primary);
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
             border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+            position: relative;
         }
 
         .featured-card h2 {
             color: #000;
-            font-size: 2rem;
+            font-size: clamp(1.5rem, 5vw, 2rem);
             text-align: center;
             border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+            margin-bottom: 1.5rem;
         }
 
         .card p {
-            color: #666;
+            color: var(--text-secondary);
             line-height: 1.6;
             margin-bottom: 1rem;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
         }
 
         .featured-card p {
             text-align: center;
-            font-size: 1.2rem;
-            color: #333;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            color: var(--text-primary);
+            margin-bottom: 2rem;
         }
 
-        .card ul {
-            list-style: none;
-            margin: 1rem 0;
-        }
-
-        .card li {
-            margin-bottom: 0.5rem;
-            padding-left: 1.5rem;
+        .rewards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+            gap: min(3vw, 1rem);
+            margin-top: 1rem;
             position: relative;
+            z-index: 1;
         }
 
-        .card li::before {
-            content: '•';
-            position: absolute;
-            left: 0;
-            color: #FFD700;
-            font-weight: bold;
-        }
-
-        .featured-card li {
+        .reward-item {
+            background: rgba(255, 255, 255, 0.95);
+            padding: min(4vw, 1.5rem);
+            border-radius: 15px;
             text-align: center;
-            padding-left: 0;
-            font-size: 1.1rem;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
         }
 
-        .featured-card li::before {
-            display: none;
+        .reward-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,215,0,0.1), transparent);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .reward-item:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: rgba(255, 215, 0, 0.6);
+        }
+
+        .reward-item h3 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: clamp(1.25rem, 4vw, 1.5rem);
+            position: relative;
+            z-index: 1;
+        }
+
+        .country-flag {
+            width: min(120px, 30vw);
+            height: min(75px, 18.75vw);
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+            transition: var(--transition);
+        }
+
+        .reward-item:hover .country-flag {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .country-name {
+            font-weight: bold;
+            color: var(--text-primary);
+            margin: 0.5rem 0;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            position: relative;
+            z-index: 1;
+        }
+
+        .country-score {
+            color: var(--text-secondary);
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+            position: relative;
+            z-index: 1;
         }
 
         .back-button {
             position: fixed;
-            top: 20px;
-            left: 20px;
-            display: inline-block;
+            top: min(20px, 5vw);
+            left: min(20px, 5vw);
+            display: inline-flex;
+            align-items: center;
             padding: 0.8rem 1.5rem;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--text-primary);
             text-decoration: none;
             border-radius: 25px;
             font-weight: bold;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 2px solid rgba(255, 255, 255, 0.5);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             z-index: 1000;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
         }
 
         .back-button:hover {
@@ -252,135 +342,122 @@
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .rewards-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .reward-item {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 1.5rem;
-            border-radius: 15px;
-            text-align: center;
-            border: 2px solid rgba(255, 215, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .reward-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            border-color: rgba(255, 215, 0, 0.6);
-        }
-
-        .reward-item h3 {
-            color: #333;
-            margin-bottom: 0.5rem;
-            font-size: 1.5rem;
-        }
-
-        .reward-item p {
-            margin: 0;
-            font-weight: bold;
-            color: #000;
-        }
-
-        .country-flag {
-            width: 80px;
-            height: 50px;
-            object-fit: cover;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 0.5rem;
-        }
-
-        .country-name {
-            font-weight: bold;
-            color: #333;
-            margin: 0.5rem 0;
-        }
-
-        .country-score {
-            color: #666;
-            font-size: 0.9rem;
-        }
-
         .footer {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            padding: min(4vw, 1.5rem);
             text-align: center;
             border-top: 1px solid rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             margin-top: auto;
+            position: relative;
         }
 
         .disclaimer {
-            max-width: 800px;
+            max-width: min(95%, 800px);
             margin: 0 auto;
-            color: #666;
-            font-size: 0.9rem;
-            line-height: 1.5;
+            color: var(--text-secondary);
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+            line-height: 1.6;
         }
 
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .header p {
-                font-size: 1rem;
-            }
-
             .container {
                 padding: 1rem;
-                gap: 1rem;
             }
 
             .card {
-                padding: 1.5rem;
-            }
-
-            .featured-card h2 {
-                font-size: 1.5rem;
-            }
-
-            .featured-card p {
-                font-size: 1rem;
+                padding: min(6vw, 1.5rem);
             }
 
             .rewards-grid {
-                grid-template-columns: 1fr;
+                gap: 1rem;
             }
 
             .back-button {
                 top: auto;
-                bottom: 20px;
+                bottom: min(20px, 5vw);
                 left: 50%;
                 transform: translateX(-50%);
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
             }
 
             .back-button:hover {
                 transform: translateX(-50%) translateY(-2px);
             }
 
-            .country-flag {
-                width: 60px;
-                height: 37.5px;
-            }
-
             .footer {
-                padding: 1rem;
                 margin-bottom: 80px;
+                padding: min(5vw, 1rem);
             }
 
-            .disclaimer {
+            .card ul {
+                padding-left: 1.5rem;
+            }
+
+            .card li {
+                margin-bottom: 0.8rem;
+            }
+
+            .featured-card {
+                margin-top: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 1.5rem 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .header p {
+                font-size: 0.9rem;
+            }
+
+            .reward-item {
+                padding: 1rem;
+            }
+
+            .country-flag {
+                width: 80px;
+                height: 50px;
+            }
+
+            .reward-item h3 {
+                font-size: 1.2rem;
+            }
+
+            .country-name {
+                font-size: 0.9rem;
+            }
+
+            .country-score {
                 font-size: 0.8rem;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                gap: 3rem;
+            }
+
+            .featured-card {
+                padding: 3rem;
+            }
+
+            .rewards-grid {
+                gap: 2rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
             }
         }
     </style>
@@ -444,7 +521,7 @@
 
     <footer class="footer">
         <div class="disclaimer">
-            Legal Disclaimer: $HID is a meme coin with no intrinsic value or expectation of financial return. $HID is for entertainment purposes only. When you purchase $HID, you are agreeing that you have seen this disclaimer.
+            Disclaimer: $HID is a meme coin with no intrinsic value or expectation of financial return. $HID is for entertainment purposes only. When you purchase $HID, you are agreeing that you have seen this disclaimer.
         </div>
     </footer>
 </body>
